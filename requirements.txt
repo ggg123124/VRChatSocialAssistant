@@ -6,3 +6,9 @@ scipy>=1.11.0
 torch>=2.0.0
 torchaudio>=2.0.0
 pyyaml>=6.0
+
+# 记忆与检索模块依赖
+chromadb>=0.4.0
+sentence-transformers>=2.2.0
+pydantic>=2.0
+modelscope>=1.9.0

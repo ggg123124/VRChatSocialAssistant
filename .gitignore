@@ -205,3 +205,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Test output files
+test_result.txt
+
+# Project specific
+# 用户数据目录（好友档案、对话记录、向量数据库）
+data/
+
+# 模型文件目录（体积大，不应提交到仓库）
+models/
