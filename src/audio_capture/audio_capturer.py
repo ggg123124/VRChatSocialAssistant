@@ -12,6 +12,7 @@ from typing import Optional, Callable, Tuple
 import logging
 import time
 import struct
+from scipy import signal
 
 logger = logging.getLogger(__name__)
 
@@ -61,6 +62,10 @@ class AudioCapturer:
         self.loopback_stream: Optional[pyaudio.Stream] = None
         self.microphone_stream: Optional[pyaudio.Stream] = None
         
+        # 重采样相关
+        self.loopback_native_rate = None  # 设备原生采样率
+        self.resample_buffer = np.array([], dtype=np.float32)  # 重采样缓冲区
+        
         # 控制标志
         self.is_running = False
         self._stop_event = Event()
@@ -95,6 +100,29 @@ class AudioCapturer:
         """
         self.microphone_callback = callback
     
+    def _resample_audio(self, audio_data: np.ndarray, orig_sr: int, target_sr: int) -> np.ndarray:
+        """
+        重采样音频数据
+        
+        Args:
+            audio_data: 原始音频数据
+            orig_sr: 原始采样率
+            target_sr: 目标采样率
+        
+        Returns:
+            重采样后的音频数据
+        """
+        if orig_sr == target_sr:
+            return audio_data
+        
+        # 计算目标样本数
+        num_samples = int(len(audio_data) * target_sr / orig_sr)
+        
+        # 使用 scipy 进行重采样
+        resampled = signal.resample(audio_data, num_samples)
+        
+        return resampled.astype(np.float32)
+    
     def _loopback_audio_callback(self, in_data, frame_count, time_info, status):
         """回环音频流回调"""
         if status:
@@ -110,9 +138,13 @@ class AudioCapturer:
         if self.channels == 1 and len(audio_data) == frame_count * 2:
             audio_data = audio_data.reshape(-1, 2).mean(axis=1)
         
+        # 如果需要重采样（loopback设备采样率与目标采样率不同）
+        if self.loopback_native_rate and self.loopback_native_rate != self.samplerate:
+            audio_data = self._resample_audio(audio_data, self.loopback_native_rate, self.samplerate)
+        
         # 放入队列
         self.loopback_queue.put((audio_data, timestamp))
-        self.loopback_frames_captured += frame_count
+        self.loopback_frames_captured += len(audio_data)
         
         # 调用用户回调
         if self.loopback_callback:
@@ -168,19 +200,23 @@ class AudioCapturer:
                 
                 # 使用设备的默认采样率和声道数
                 loopback_channels = device_info.get('maxInputChannels', 2)
+                self.loopback_native_rate = int(device_info['defaultSampleRate'])
+                
+                # 计算适合原生采样率的chunk大小
+                native_chunk_size = int(self.chunk_size * self.loopback_native_rate / self.samplerate)
                 
                 self.loopback_stream = self.p.open(
                     format=self.format,
                     channels=loopback_channels,  # WASAPI loopback 通常是双声道
-                    rate=int(device_info['defaultSampleRate']),
+                    rate=self.loopback_native_rate,
                     input=True,
                     input_device_index=self.loopback_device,
-                    frames_per_buffer=self.chunk_size,
+                    frames_per_buffer=native_chunk_size,
                     stream_callback=self._loopback_audio_callback
                 )
                 self.loopback_stream.start_stream()
                 logger.info(f"WASAPI Loopback 音频流已启动: device={self.loopback_device}, "
-                           f"sr={int(device_info['defaultSampleRate'])}, ch={loopback_channels}")
+                           f"native_sr={self.loopback_native_rate}, target_sr={self.samplerate}, ch={loopback_channels}")
             except Exception as e:
                 logger.error(f"启动 WASAPI Loopback 音频流失败: {e}", exc_info=True)
                 self.loopback_stream = None

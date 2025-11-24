@@ -239,8 +239,8 @@ def main():
     print("\n正在检测音频设备...")
     device_manager = DeviceManager()
     
-    loopback_devices = device_manager.get_wasapi_loopback_devices()
-    microphone_devices = device_manager.get_input_devices()
+    loopback_devices = device_manager.list_loopback_devices()
+    microphone_devices = device_manager.list_input_devices()
     
     print("\n可用的 WASAPI Loopback 设备（系统音频）:")
     for i, dev in enumerate(loopback_devices, 1):
@@ -250,15 +250,26 @@ def main():
     for i, dev in enumerate(microphone_devices, 1):
         print(f"  {i}. [{dev['index']}] {dev['name']}")
     
-    # 选择设备
+    # 选择设备 - 使用默认设备
     loopback_device = None
     microphone_device = None
     
-    if loopback_devices:
+    # 重新打开设备管理器获取默认设备
+    device_manager = DeviceManager()
+    default_loopback = device_manager.get_default_wasapi_loopback()
+    default_input = device_manager.get_default_input_device()
+    
+    if default_loopback:
+        loopback_device = default_loopback['index']
+        print(f"\n使用默认 Loopback 设备: [{loopback_device}] {default_loopback['name']}")
+    elif loopback_devices:
         loopback_device = loopback_devices[0]['index']
         print(f"\n使用 Loopback 设备: [{loopback_device}] {loopback_devices[0]['name']}")
     
-    if microphone_devices:
+    if default_input:
+        microphone_device = default_input['index']
+        print(f"使用默认麦克风设备: [{microphone_device}] {default_input['name']}")
+    elif microphone_devices:
         microphone_device = microphone_devices[0]['index']
         print(f"使用麦克风设备: [{microphone_device}] {microphone_devices[0]['name']}")
     
