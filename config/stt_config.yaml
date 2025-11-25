@@ -1,0 +1,62 @@
+# STT 模块配置文件
+
+stt:
+  # 通用配置
+  default_engine: local              # 默认引擎（local/cloud）
+  fallback_enabled: true              # 启用降级策略
+  enable_cache: false                 # 启用结果缓存（暂未实现）
+  cache_ttl: 3600                     # 缓存过期时间（秒）
+  max_audio_duration: 30.0            # 最大音频时长（秒）
+  min_audio_duration: 0.3             # 最小音频时长（秒）
+  
+  # 本地引擎配置
+  local:
+    model_path: models/stt/faster-whisper/
+    model_size: medium                # tiny/base/small/medium/large
+    device: auto                      # cpu/cuda/auto
+    compute_type: int8                # float32/float16/int8 (CPU使用int8)
+    language: auto                    # zh/en/auto
+    beam_size: 5                      # Beam search宽度
+    best_of: 5                        # 采样候选数
+    temperature: 0.0                  # 采样温度（0=贪婪解码）
+    vad_filter: false                 # 内置VAD（已有独立 VAD模块）
+    auto_download: true               # 自动下载模型
+    download_source: modelscope       # modelscope/huggingface
+  
+  # 云端引擎配置
+  cloud:
+    provider: aliyun                  # aliyun/tencent
+    timeout: 5                        # 超时时间（秒）
+    retry_count: 3                    # 重试次数
+    retry_delay: 1                    # 重试延迟（秒）
+    
+    # 阿里云配置
+    aliyun:
+      app_key: ""                     # 从环境变量或配置文件读取
+      access_key_id: ""
+      access_key_secret: ""
+      format: pcm
+      sample_rate: 16000
+      enable_intermediate_result: false
+      enable_punctuation_prediction: true
+      enable_inverse_text_normalization: true
+    
+    # 腾讯云配置
+    tencent:
+      secret_id: ""                   # 从环境变量或配置文件读取
+      secret_key: ""
+      engine_type: 16k_zh
+      voice_format: 1                 # 1=pcm, 4=opus
+  
+  # 质量控制
+  quality:
+    min_confidence: 0.3               # 最低置信度阈值
+    max_text_length: 500              # 最大文本长度
+    enable_postprocessing: true       # 启用后处理
+    enable_profanity_filter: false    # 敏感词过滤
+  
+  # 性能配置
+  performance:
+    enable_async: true                # 启用异步识别
+    queue_size: 100                   # 任务队列大小
+    worker_threads: 2                 # 工作线程数
