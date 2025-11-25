@@ -73,6 +73,14 @@ class EmbeddingService:
     
     def _initialize_model(self):
         """初始化模型（加载或下载）"""
+        # 尝试从 HuggingFace 直接加载，绕过本地文件系统
+        try:
+            logger.info("尝试直接从 HuggingFace 加载模型（绕过兼容性问题）...")
+            self._load_model_from_hub()
+            return
+        except Exception as e:
+            logger.warning(f"从 HuggingFace 直接加载失败: {e}，尝试本地加载...")
+        
         # 检查模型是否存在
         if not self.check_model_exists(str(self.model_path)):
             if self.auto_download:
@@ -237,6 +245,25 @@ class EmbeddingService:
         except Exception as e:
             logger.error(f"HuggingFace download failed: {e}")
             return False
+    
+    def _load_model_from_hub(self):
+        """直接从 HuggingFace Hub 加载模型（绕过本地文件系统问题）"""
+        try:
+            from sentence_transformers import SentenceTransformer
+            
+            logger.info(f"Loading model directly from HuggingFace Hub: {self.model_name}")
+            
+            # 直接从 HuggingFace 加载，使用系统缓存
+            self.model = SentenceTransformer(self.model_name, device=self.device)
+            
+            # 获取向量维度
+            self._dimension = self.model.get_sentence_embedding_dimension()
+            
+            logger.info(f"Model loaded from Hub successfully. Dimension: {self._dimension}")
+            
+        except Exception as e:
+            logger.error(f"Failed to load model from Hub: {e}")
+            raise
     
     def encode(self, text: str) -> List[float]:
         """

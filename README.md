@@ -147,7 +147,7 @@
 
 ### 环境要求
 
-- Python 3.8+
+- Python 3.11
 - Windows 10/11（WASAPI支持）
 - 支持CUDA的GPU（可选，用于加速）
 
@@ -170,6 +170,31 @@ pip install -r requirements.txt
 **STT模型**: 首次运行STT模块时会从 Hugging Face 自动下载 faster-whisper 模型（约1-3GB，取决于选择的模型大小）。
 
 ### 运行测试
+
+#### 集成测试工具（推荐）
+```bash
+# Windows 用户可以直接运行
+python tests/integrated_test.py
+# 或使用启动脚本
+run_integrated_test.bat
+
+# 仅运行初始化检查
+python tests/integrated_test.py --init
+
+# 直接运行完整流程测试
+python tests/integrated_test.py --full
+```
+
+集成测试工具提供了交互式命令行界面，可以：
+- 🔍 自动检查环境并初始化所有模块
+- 🧪 单独测试各个模块功能
+- 🔗 测试端到端的语音处理流程
+- 📊 管理好友档案和对话数据
+- 📊 查看系统状态和统计信息
+
+详细使用说明请查看: [tests/README_TEST.md](tests/README_TEST.md)
+
+#### 模块单元测试
 
 #### 测试音频采集
 ```bash
@@ -249,6 +274,12 @@ VRChatSocialAssistant/
 │       ├── embedding_service.py
 │       └── retriever.py
 ├── tests/                # 测试代码
+│   ├── integrated_test.py        # 集成测试主程序
+│   ├── test_utils.py             # 测试工具函数
+│   ├── README_TEST.md            # 测试说明文档
+│   ├── test_data/                # 测试数据
+│   │   ├── sample_profiles.json
+│   │   └── sample_conversations.json
 │   ├── test_audio_capture.py
 │   ├── test_vad.py
 │   ├── test_vad_integration.py
@@ -257,7 +288,8 @@ VRChatSocialAssistant/
 │   ├── demo_speaker_recognition.py
 │   ├── test_stt.py
 │   └── test_memory_basic.py
-└── requirements.txt      # 项目依赖
+├── run_integrated_test.bat   # Windows 启动脚本
+└── requirements.txt          # 项目依赖
 ```
 
 ## 测试结果

@@ -16,6 +16,7 @@ modelscope>=1.9.0
 # 说话人识别模块依赖
 pyannote.audio>=3.0.0
 soundfile>=0.12.0
+resemblyzer>=0.1.4  # 真实声纹识别模型
 
 # STT 模块依赖
 faster-whisper>=0.10.0
